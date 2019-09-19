@@ -32,7 +32,7 @@ void uart_init(uint32_t baudrate)
 {
     *((volatile uint32_t *)(UART_BASE + 0x08)) = 0x03;
     *((volatile uint32_t *)(UART_BASE + 0x10)) = baudrate;
-    *((volatile uint8_t *)(UART_BASE + 0x04)) = 0x0a;
+    *((volatile uint32_t *)(UART_BASE + 0x04)) = 0x0a;
 }
 
 void uart_tx_byte(uint8_t ch)
@@ -40,10 +40,10 @@ void uart_tx_byte(uint8_t ch)
     uint8_t tmp;
 
     do {
-        tmp = *((volatile uint8_t *)(UART_BASE + 0x04));
+        tmp = *((volatile uint32_t *)(UART_BASE + 0x04));
     } while((tmp & 0x01) == 0x01);
 
-    *((volatile uint8_t *)(UART_BASE)) = ch;
+    *((volatile uint32_t *)(UART_BASE)) = ch;
 }
 
 uint8_t uart_rx_byte(void)
@@ -51,10 +51,10 @@ uint8_t uart_rx_byte(void)
     uint8_t tmp;
 
     do {
-        tmp = *((volatile uint8_t *)(UART_BASE + 0x04));
+        tmp = *((volatile uint32_t *)(UART_BASE + 0x04));
     } while((tmp & 0x08) == 0x08);
 
-    return (*((volatile uint8_t *)(UART_BASE)));
+    return (*((volatile uint32_t *)(UART_BASE)));
 }
 
 void uart_puts(const char *str)

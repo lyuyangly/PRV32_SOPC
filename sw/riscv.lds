@@ -3,11 +3,11 @@ ENTRY(_start)
 
 MEMORY
 {
-    RAM (rwx) : ORIGIN = 0x0, LENGTH = 8K
+    RAM (rwx) : ORIGIN = 0x0, LENGTH = 4K
 }
 
-STACK_SIZE  = 1k;
-HEAP_SIZE   = 1k;
+STACK_SIZE  = 512;
+HEAP_SIZE   = 64;
 
 SECTIONS
 {

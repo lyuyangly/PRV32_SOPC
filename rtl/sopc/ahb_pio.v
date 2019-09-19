@@ -50,8 +50,10 @@ end
 
 always @(posedge HCLK or negedge HRESETn)
 begin
-	if (!HRESETn)
-		HRDATA <= 'd0;
+	if (!HRESETn) begin
+        pio_reg <= 'd0;
+		HRDATA  <= 'd0;
+    end
 	else begin
 		if (ram_wr)
 			pio_reg <= HWDATA;

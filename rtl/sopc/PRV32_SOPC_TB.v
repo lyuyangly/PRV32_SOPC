@@ -23,12 +23,14 @@ module PRV32_SOPC_TB;
 reg             clk;
 reg             rst;
 wire    [3:0]   led;
+wire            uart_tx;
+wire            uart_rx;
 
-PRV32_SOPC  U_DUT (
+PRV32_SOPC U_DUT (
     .clk                (clk            ),
     .rst                (rst            ),
-    .uart_txd           (),
-    .uart_rxd           (1'b1           ),
+    .uart_txd           (uart_tx        ),
+    .uart_rxd           (uart_rx        ),
     .led                (led            )
 );
 
@@ -39,7 +41,7 @@ initial begin
     rst  = 1'b1;
     #100;
     rst = 1'b0;
-    #5000000;
+    #10000000;
     $finish;
 end
 

@@ -8,6 +8,8 @@ extern int xmodemReceive(unsigned char*, int);
 
 typedef void (*p_func)(void);
 
+#define LOAD_BASE 0x1000
+
 void delay(unsigned int t)
 {
 	volatile uint32_t i, j;
@@ -19,35 +21,37 @@ int main(void)
 {
     int st;
 	volatile int num;
-    p_func boot_main=(p_func)(DRAM_BASE);
+    p_func boot_main=(p_func)(LOAD_BASE);
 
     // GPIO
-	*((volatile uint32_t *)(GPIO_BASE)) = 0xaa;
+	*((volatile uint32_t *)(GPIO_BASE)) = 0xa;
 
     // UART 115200 8N1
-    uart_init(434);
+    uart_init(6944);
     uart_puts("PicoRV32 CPU Boot ...\r\n");
     uart_puts("Receive Program by Xmodem in 10s ...\r\n");
     delay(10000);
 
-    st = xmodemReceive((unsigned char *)(DRAM_BASE), 8192);
+	*((volatile uint32_t *)(GPIO_BASE)) = 0x5;
 
-	*((volatile uint32_t *)(GPIO_BASE)) = 0x55;
+    st = xmodemReceive((unsigned char *)(LOAD_BASE), 8192);
+
+	*((volatile uint32_t *)(GPIO_BASE)) = 0xa;
 
     if(st < 0) {
         uart_puts("Xmodem Receive FAIL.\r\n");
     	while(1) {
-    		*((volatile uint32_t *)(DRAM_BASE + 0x10)) = 0xaa;
-    		num = *((volatile uint32_t *)(DRAM_BASE + 0x10));
+    		*((volatile uint32_t *)(LOAD_BASE + 0x10)) = 0xaa;
+    		num = *((volatile uint32_t *)(LOAD_BASE + 0x10));
     		*((volatile uint32_t *)(GPIO_BASE)) = num;
     		delay(1000);
-    		*((volatile uint32_t *)(DRAM_BASE + 0x10)) = 0x55;
-    		num = *((volatile uint32_t *)(DRAM_BASE + 0x10));
+    		*((volatile uint32_t *)(LOAD_BASE + 0x10)) = 0x55;
+    		num = *((volatile uint32_t *)(LOAD_BASE + 0x10));
             *((volatile uint32_t *)(GPIO_BASE)) = num;
     		delay(1000);
     	}
     } else {
-        uart_puts("Start from DRAM_BASE ...\r\n");
+        uart_puts("Start from LOAD_BASE ...\r\n");
         boot_main();
     }
 

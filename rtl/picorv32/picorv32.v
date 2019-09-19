@@ -1,8 +1,9 @@
 //******************************************************************************
 // PicoRV32 -- A Small RISC-V (RV32I) Processor Core
 //******************************************************************************
-`timescale 1ns / 1ps
+`timescale 1 ns / 1 ps
 
+// uncomment this for register file in extra module
 //`define PICORV32_REGS picorv32_regs
 
 module picorv32 #(
@@ -34,6 +35,7 @@ module picorv32 #(
 	parameter [31:0] STACKADDR = 32'h ffff_ffff
 ) (
 	input clk, resetn,
+	output reg trap,
 
 	output reg        mem_valid,
 	output reg        mem_instr,
@@ -64,7 +66,6 @@ module picorv32 #(
 	// IRQ Interface
 	input      [31:0] irq,
 	output reg [31:0] eoi,
-	output reg        trap,
 
 	// Trace Interface
 	output reg        trace_valid,
@@ -124,7 +125,6 @@ module picorv32 #(
 `endif
 
 	// Internal PCPI Cores
-
 	wire        pcpi_mul_wr;
 	wire [31:0] pcpi_mul_rd;
 	wire        pcpi_mul_wait;
@@ -216,9 +216,7 @@ module picorv32 #(
 		endcase
 	end
 
-
 	// Memory Interface
-
 	reg [1:0] mem_state;
 	reg [1:0] mem_wordsize;
 	reg [31:0] mem_rdata_word;
@@ -1344,6 +1342,8 @@ module picorv32 #(
 					latched_branch: begin
 						current_pc = latched_store ? (latched_stalu ? alu_out_q : reg_out) & ~1 : reg_next_pc;
 					end
+					latched_store && !latched_branch: begin
+					end
 					ENABLE_IRQ && irq_state[0]: begin
 						current_pc = PROGADDR_IRQ;
 						irq_active <= 1;
@@ -1817,7 +1817,6 @@ endmodule
 /***************************************************************
  * picorv32_pcpi_mul
  ***************************************************************/
-
 module picorv32_pcpi_mul #(
 	parameter STEPS_AT_ONCE = 1,
 	parameter CARRY_CHAIN = 4
@@ -2040,7 +2039,6 @@ endmodule
 /***************************************************************
  * picorv32_pcpi_div
  ***************************************************************/
-
 module picorv32_pcpi_div (
 	input clk, resetn,
 
@@ -2145,27 +2143,29 @@ module picorv32_axi #(
 	parameter [ 0:0] BARREL_SHIFTER = 0,
 	parameter [ 0:0] TWO_CYCLE_COMPARE = 0,
 	parameter [ 0:0] TWO_CYCLE_ALU = 0,
-	parameter [ 0:0] COMPRESSED_ISA = 1,
+	parameter [ 0:0] COMPRESSED_ISA = 0,
 	parameter [ 0:0] CATCH_MISALIGN = 1,
 	parameter [ 0:0] CATCH_ILLINSN = 1,
 	parameter [ 0:0] ENABLE_PCPI = 0,
-	parameter [ 0:0] ENABLE_MUL = 1,
-	parameter [ 0:0] ENABLE_FAST_MUL = 1,
+	parameter [ 0:0] ENABLE_MUL = 0,
+	parameter [ 0:0] ENABLE_FAST_MUL = 0,
 	parameter [ 0:0] ENABLE_DIV = 0,
-	parameter [ 0:0] ENABLE_IRQ = 1,
+	parameter [ 0:0] ENABLE_IRQ = 0,
 	parameter [ 0:0] ENABLE_IRQ_QREGS = 1,
 	parameter [ 0:0] ENABLE_IRQ_TIMER = 1,
 	parameter [ 0:0] ENABLE_TRACE = 0,
 	parameter [ 0:0] REGS_INIT_ZERO = 0,
-	parameter [31:0] MASKED_IRQ = 32'h0000_0000,
-	parameter [31:0] LATCHED_IRQ = 32'hffff_ffff,
-	parameter [31:0] PROGADDR_RESET = 32'h0000_0000,
-	parameter [31:0] PROGADDR_IRQ = 32'h0000_0010,
-	parameter [31:0] STACKADDR = 32'hffff_ffff
+	parameter [31:0] MASKED_IRQ = 32'h 0000_0000,
+	parameter [31:0] LATCHED_IRQ = 32'h ffff_ffff,
+	parameter [31:0] PROGADDR_RESET = 32'h 0000_0000,
+	parameter [31:0] PROGADDR_IRQ = 32'h 0000_0010,
+	parameter [31:0] STACKADDR = 32'h ffff_ffff
 ) (
 	input clk, resetn,
+	output trap,
 
 	// AXI4-lite master memory interface
+
 	output        mem_axi_awvalid,
 	input         mem_axi_awready,
 	output [31:0] mem_axi_awaddr,
@@ -2201,7 +2201,6 @@ module picorv32_axi #(
 	// IRQ interface
 	input  [31:0] irq,
 	output [31:0] eoi,
-	output        trap,
 
 	// Trace Interface
 	output        trace_valid,
@@ -2300,11 +2299,9 @@ module picorv32_axi #(
 	);
 endmodule
 
-
 /***************************************************************
  * picorv32_axi_adapter
  ***************************************************************/
-
 module picorv32_axi_adapter (
 	input clk, resetn,
 
@@ -2384,6 +2381,7 @@ module picorv32_axi_adapter (
 	end
 endmodule
 
+
 /***************************************************************
  * picorv32_wb
  ***************************************************************/
@@ -2396,24 +2394,26 @@ module picorv32_wb #(
 	parameter [ 0:0] BARREL_SHIFTER = 0,
 	parameter [ 0:0] TWO_CYCLE_COMPARE = 0,
 	parameter [ 0:0] TWO_CYCLE_ALU = 0,
-	parameter [ 0:0] COMPRESSED_ISA = 1,
+	parameter [ 0:0] COMPRESSED_ISA = 0,
 	parameter [ 0:0] CATCH_MISALIGN = 1,
 	parameter [ 0:0] CATCH_ILLINSN = 1,
 	parameter [ 0:0] ENABLE_PCPI = 0,
 	parameter [ 0:0] ENABLE_MUL = 0,
-	parameter [ 0:0] ENABLE_FAST_MUL = 1,
+	parameter [ 0:0] ENABLE_FAST_MUL = 0,
 	parameter [ 0:0] ENABLE_DIV = 0,
-	parameter [ 0:0] ENABLE_IRQ = 1,
+	parameter [ 0:0] ENABLE_IRQ = 0,
 	parameter [ 0:0] ENABLE_IRQ_QREGS = 1,
 	parameter [ 0:0] ENABLE_IRQ_TIMER = 1,
 	parameter [ 0:0] ENABLE_TRACE = 0,
 	parameter [ 0:0] REGS_INIT_ZERO = 0,
-	parameter [31:0] MASKED_IRQ = 32'h0000_0000,
-	parameter [31:0] LATCHED_IRQ = 32'hffff_ffff,
-	parameter [31:0] PROGADDR_RESET = 32'h0000_0000,
-	parameter [31:0] PROGADDR_IRQ = 32'h0000_0010,
-	parameter [31:0] STACKADDR = 32'hffff_ffff
+	parameter [31:0] MASKED_IRQ = 32'h 0000_0000,
+	parameter [31:0] LATCHED_IRQ = 32'h ffff_ffff,
+	parameter [31:0] PROGADDR_RESET = 32'h 0000_0000,
+	parameter [31:0] PROGADDR_IRQ = 32'h 0000_0010,
+	parameter [31:0] STACKADDR = 32'h ffff_ffff
 ) (
+	output trap,
+
 	// Wishbone interfaces
 	input wb_rst_i,
 	input wb_clk_i,
@@ -2441,12 +2441,33 @@ module picorv32_wb #(
 	input  [31:0] irq,
 	output [31:0] eoi,
 
+`ifdef RISCV_FORMAL
+	output        rvfi_valid,
+	output [63:0] rvfi_order,
+	output [31:0] rvfi_insn,
+	output        rvfi_trap,
+	output        rvfi_halt,
+	output        rvfi_intr,
+	output [ 4:0] rvfi_rs1_addr,
+	output [ 4:0] rvfi_rs2_addr,
+	output [31:0] rvfi_rs1_rdata,
+	output [31:0] rvfi_rs2_rdata,
+	output [ 4:0] rvfi_rd_addr,
+	output [31:0] rvfi_rd_wdata,
+	output [31:0] rvfi_pc_rdata,
+	output [31:0] rvfi_pc_wdata,
+	output [31:0] rvfi_mem_addr,
+	output [ 3:0] rvfi_mem_rmask,
+	output [ 3:0] rvfi_mem_wmask,
+	output [31:0] rvfi_mem_rdata,
+	output [31:0] rvfi_mem_wdata,
+`endif
+
 	// Trace Interface
 	output        trace_valid,
 	output [35:0] trace_data,
 
-	output        trap,
-	output        mem_instr
+	output mem_instr
 );
 	wire        mem_valid;
 	wire [31:0] mem_addr;
@@ -2511,6 +2532,28 @@ module picorv32_wb #(
 
 		.irq(irq),
 		.eoi(eoi),
+
+`ifdef RISCV_FORMAL
+		.rvfi_valid    (rvfi_valid    ),
+		.rvfi_order    (rvfi_order    ),
+		.rvfi_insn     (rvfi_insn     ),
+		.rvfi_trap     (rvfi_trap     ),
+		.rvfi_halt     (rvfi_halt     ),
+		.rvfi_intr     (rvfi_intr     ),
+		.rvfi_rs1_addr (rvfi_rs1_addr ),
+		.rvfi_rs2_addr (rvfi_rs2_addr ),
+		.rvfi_rs1_rdata(rvfi_rs1_rdata),
+		.rvfi_rs2_rdata(rvfi_rs2_rdata),
+		.rvfi_rd_addr  (rvfi_rd_addr  ),
+		.rvfi_rd_wdata (rvfi_rd_wdata ),
+		.rvfi_pc_rdata (rvfi_pc_rdata ),
+		.rvfi_pc_wdata (rvfi_pc_wdata ),
+		.rvfi_mem_addr (rvfi_mem_addr ),
+		.rvfi_mem_rmask(rvfi_mem_rmask),
+		.rvfi_mem_wmask(rvfi_mem_wmask),
+		.rvfi_mem_rdata(rvfi_mem_rdata),
+		.rvfi_mem_wdata(rvfi_mem_wdata),
+`endif
 
 		.trace_valid(trace_valid),
 		.trace_data (trace_data)
@@ -2605,8 +2648,8 @@ module picorv32_ahb #(
     parameter [31:0] MASKED_IRQ = 32'h0000_0000,
     parameter [31:0] LATCHED_IRQ = 32'hffff_ffff,
     parameter [31:0] PROGADDR_RESET = 32'h0000_0000,
-    parameter [31:0] PROGADDR_IRQ = 32'h0000_0010,
-    parameter [31:0] STACKADDR = 32'hffff_ffff
+    parameter [31:0] PROGADDR_IRQ = 32'h0000_0004,
+    parameter [31:0] STACKADDR = 32'hffc
 ) (
     input   wire            hclk        ,
     input   wire            hreset_n    ,

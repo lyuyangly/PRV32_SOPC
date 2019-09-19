@@ -3,7 +3,6 @@
 
 // Device Base Address
 #define		GPIO_BASE	0x20000000
-#define		DRAM_BASE	0x40000000
 #define		UART_BASE	0x80004000
 
 #endif
