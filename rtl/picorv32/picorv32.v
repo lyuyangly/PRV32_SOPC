@@ -2465,9 +2465,7 @@ module picorv32_wb #(
 
 	// Trace Interface
 	output        trace_valid,
-	output [35:0] trace_data,
-
-	output mem_instr
+	output [35:0] trace_data
 );
 	wire        mem_valid;
 	wire [31:0] mem_addr;
@@ -2475,6 +2473,7 @@ module picorv32_wb #(
 	wire [ 3:0] mem_wstrb;
 	reg         mem_ready;
 	reg [31:0] mem_rdata;
+	wire        mem_instr;
 
 	wire clk;
 	wire resetn;
@@ -2584,7 +2583,7 @@ module picorv32_wb #(
 						wbm_adr_o <= mem_addr;
 						wbm_dat_o <= mem_wdata;
 						wbm_we_o <= we;
-						wbm_sel_o <= mem_wstrb;
+						wbm_sel_o <= mem_instr ? 4'hf : mem_wstrb;
 
 						wbm_stb_o <= 1'b1;
 						wbm_cyc_o <= 1'b1;
@@ -2648,8 +2647,8 @@ module picorv32_ahb #(
     parameter [31:0] MASKED_IRQ = 32'h0000_0000,
     parameter [31:0] LATCHED_IRQ = 32'hffff_ffff,
     parameter [31:0] PROGADDR_RESET = 32'h0000_0000,
-    parameter [31:0] PROGADDR_IRQ = 32'h0000_0004,
-    parameter [31:0] STACKADDR = 32'hffc
+    parameter [31:0] PROGADDR_IRQ = 32'h0000_0010,
+    parameter [31:0] STACKADDR = 32'hffff_ffff
 ) (
     input   wire            hclk        ,
     input   wire            hreset_n    ,
@@ -2684,8 +2683,7 @@ module picorv32_ahb #(
 
     // Trace Interface
     output  wire            trace_valid ,
-    output  wire    [35:0]  trace_data  ,
-    output  wire            mem_instr
+    output  wire    [35:0]  trace_data
 );
 
 wire            mem_valid;
@@ -2694,6 +2692,7 @@ wire    [31:0]  mem_wdata;
 wire    [31:0]  mem_rdata;
 wire    [3:0]   mem_wstrb;
 wire            mem_ready;
+wire        mem_instr;
 
 reg     [1:0]   state;
 reg     [2:0]   mem_size;
@@ -2765,7 +2764,7 @@ always @(posedge hclk, negedge hreset_n)
                     hbusreq   <= 1'b1;
                     haddr     <= {mem_addr[31:2], mem_addr_lsb};
                     htrans    <= 2'h0;
-                    hsize     <= mem_size;
+                    hsize     <= mem_instr ? 3'h2 : mem_size;
                     hwrite    <= |mem_wstrb;
                     hwdata    <= mem_wdata;
                 end
