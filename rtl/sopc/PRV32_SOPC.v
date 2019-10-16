@@ -92,8 +92,7 @@ picorv32_ahb U_CPU (
     .eoi                    (),
     .trap                   (),
     .trace_valid            (),
-    .trace_data             (),
-    .mem_instr              ()
+    .trace_data             ()
 );
 
 // AHB Interconnect
